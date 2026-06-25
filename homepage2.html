@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>floriders — aus Idee wird Produkt</title>
+<meta name="description" content="Ich verwandle unklare Ideen in funktionierende digitale Produkte. Webdesign & Entwicklung aus Österreich." />
+
+<style>
+/* ============================================================
+   TYPOGRAFIE — Apple-Schriftsystem (keine Web-Fonts)
+   · SF Pro (system)  → technische/UI-Stimme
+   · New York (serif) → menschliche/Idee-Stimme
+   · SF Mono          → Labels, Code, Metadaten
+   ============================================================ */
+:root{
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+  --serif: ui-serif, "New York", "Iowan Old Style", "Palatino", Georgia, serif;
+  --mono: ui-monospace, "SF Mono", "SFMono-Regular", "Menlo", monospace;
+
+  /* Farb- & Fidelity-Bogen — "Idee"-Phase, JS flutet Richtung Dark-Luxury */
+  --bg:    rgb(245,242,236);
+  --ink:   rgb(24,22,19);
+  --line:  rgb(219,214,205);
+  --panel: rgb(252,250,247);
+  --accent:rgb(188,143,103);
+
+  --maxw: 1200px;
+  --gut: clamp(1.25rem, 5vw, 4.5rem);
+  --ease: cubic-bezier(.22,.61,.36,1);
+  --ease-out: cubic-bezier(.16,1,.3,1);
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  background-color:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:400;
+  line-height:1.6;
+  letter-spacing:-.011em;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+html.lenis,html.lenis body{ height:auto; }
+.lenis.lenis-smooth{ scroll-behavior:auto !important; }
+
+::selection{ background:var(--accent); color:var(--bg); }
+a{ color:inherit; text-decoration:none; }
+img,svg{ display:block; max-width:100%; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:3px; }
+
+.skip{ position:absolute; left:-9999px; top:0; z-index:200; background:var(--ink); color:var(--bg); padding:.75rem 1.25rem; font-family:var(--mono); font-size:.8rem; }
+.skip:focus{ left:1rem; top:1rem; }
+
+/* Subtile Filmkörnung — Tiefe ohne Effekthascherei */
+.grain{ position:fixed; inset:0; z-index:3; pointer-events:none; opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* Scroll-Fortschritt — die Reise Idee → Launch */
+.progress{ position:fixed; top:0; left:0; height:2px; width:100%; transform:scaleX(0); transform-origin:0 50%; background:var(--accent); z-index:80; }
+
+/* ---------- Layout ---------- */
+.wrap{ width:100%; max-width:var(--maxw); margin-inline:auto; padding-inline:var(--gut); }
+section{ position:relative; }
+
+.eyebrow{ font-family:var(--mono); font-size:clamp(.7rem,.85vw,.76rem); letter-spacing:.22em; text-transform:uppercase; color:var(--accent); display:inline-flex; align-items:center; gap:.8rem; }
+.eyebrow::before{ content:""; width:2.4rem; height:1px; background:currentColor; opacity:.7; transform-origin:left; }
+
+.lead{ font-family:var(--serif); font-weight:400; font-size:clamp(1.65rem,3.8vw,2.9rem); line-height:1.16; letter-spacing:-.018em; max-width:22ch; }
+.note{ font-size:clamp(1rem,1.15vw,1.1rem); opacity:.62; max-width:44ch; }
+
+/* Reveal-Grundzustände (JS hebt auf) */
+[data-reveal]{ opacity:0; transform:translateY(26px); will-change:transform,opacity; }
+[data-mask]{ opacity:0; clip-path:inset(0 0 100% 0); transform:translateY(14px); will-change:transform,clip-path; }
+[data-stagger] > *{ opacity:0; transform:translateY(24px); }
+
+/* ============================================================
+   NAV
+   ============================================================ */
+.nav{ position:fixed; inset:0 0 auto 0; z-index:90; display:flex; justify-content:space-between; align-items:center; padding:clamp(1rem,2vw,1.5rem) var(--gut); pointer-events:none; }
+.nav a{ pointer-events:auto; }
+.nav__mark{ font-family:var(--mono); font-size:.8rem; letter-spacing:.02em; color:var(--ink); }
+.nav__mark b{ color:var(--accent); font-weight:500; }
+.nav__cta{ font-family:var(--mono); font-size:.78rem; letter-spacing:.04em; color:var(--ink); display:inline-flex; gap:.45rem; align-items:center; padding:.55rem .95rem; border:1px solid var(--line); border-radius:999px; opacity:0; transform:translateY(-8px); transition:opacity .4s var(--ease), transform .4s var(--ease), border-color .3s, color .3s; }
+.nav__cta:hover{ color:var(--accent); border-color:var(--accent); }
+.nav.show .nav__cta{ opacity:1; transform:none; }
+
+/* ============================================================
+   1 · DIE NACHRICHT
+   ============================================================ */
+.hero{ min-height:100svh; display:grid; grid-template-rows:1fr auto; padding:clamp(7rem,14vh,11rem) 0 clamp(2rem,5vh,3rem); }
+.hero__msg{ align-self:center; font-family:var(--serif); font-weight:400; text-transform:lowercase; font-size:clamp(2rem,5.6vw,4.4rem); line-height:1.18; letter-spacing:-.025em; max-width:17ch; }
+.hero__msg .l2{ display:block; opacity:.55; font-size:.6em; margin-top:.7em; max-width:32ch; line-height:1.42; letter-spacing:-.015em; }
+.cursor{ display:inline-block; width:.055em; height:.9em; background:var(--accent); margin-left:.07em; transform:translateY(.1em); animation:blink 1.1s steps(1) infinite; }
+@keyframes blink{ 50%{ opacity:0; } }
+.hero__hint{ align-self:end; display:flex; align-items:center; gap:.9rem; font-family:var(--mono); font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; opacity:.5; }
+.hero__hint .rule{ width:1px; height:3.4rem; background:var(--ink); opacity:.4; transform-origin:top; animation:drop 2.4s var(--ease) infinite; }
+@keyframes drop{ 0%,100%{ transform:scaleY(.4); opacity:.15;} 50%{ transform:scaleY(1); opacity:.5;} }
+
+/* ============================================================
+   2 · DIE FRAGEN
+   ============================================================ */
+.questions{ padding:clamp(7rem,16vh,13rem) 0; }
+.questions__grid{ display:grid; gap:clamp(2.5rem,6vw,5rem); }
+.q-notes{ position:relative; min-height:clamp(22rem,50vh,32rem); }
+.q-note{ font-family:var(--serif); font-style:italic; font-weight:400; font-size:clamp(1.35rem,2.7vw,2.1rem); line-height:1.24; max-width:18ch; position:absolute; padding-left:1.1rem; }
+.q-note::before{ content:"„"; position:absolute; left:-.1rem; top:-.12em; color:var(--accent); font-size:1.4em; }
+.q-note.n1{ top:0;   left:0;   transform:rotate(-2.2deg); }
+.q-note.n2{ top:26%; right:0;  transform:rotate(1.6deg); text-align:right; padding:0 1.1rem 0 0; }
+.q-note.n2::before{ left:auto; right:-.1rem; }
+.q-note.n3{ top:52%; left:6%;  transform:rotate(-1deg); }
+.q-note.n4{ top:78%; right:8%; transform:rotate(2.4deg); }
+@media (max-width:760px){
+  .q-notes{ min-height:auto; display:flex; flex-direction:column; gap:2.4rem; }
+  .q-notes .q-note{ position:static; transform:none !important; text-align:left !important; padding:0 0 0 1.1rem !important; max-width:24ch; }
+  .q-note.n2::before{ left:-.1rem; right:auto; }
+}
+
+/* ============================================================
+   3 · DAS KONZEPT
+   ============================================================ */
+.concept{ padding:clamp(6rem,13vh,11rem) 0; }
+.concept__head{ margin-bottom:clamp(3rem,7vw,5rem); }
+.flow{ width:100%; height:auto; }
+.flow .edge{ fill:none; stroke:var(--ink); stroke-width:1.4; opacity:.5; }
+.flow .node{ fill:none; stroke:var(--ink); stroke-width:1.4; }
+.flow .node-fill{ fill:var(--panel); }
+.flow text{ font-family:var(--mono); font-size:13px; fill:var(--ink); letter-spacing:.04em; }
+.flow .root rect.node{ stroke:var(--accent); }
+.flow g.node-g{ transform-box:fill-box; transform-origin:center; }
+
+/* ============================================================
+   4+5 · DAS LABOR — Wireframe → Design (einziger Pin)
+   ============================================================ */
+.lab{ position:relative; }
+.lab__stage{ min-height:100svh; display:grid; grid-template-rows:auto 1fr; align-items:center; padding:clamp(5rem,9vh,7rem) 0 clamp(3rem,6vh,4rem); overflow:hidden; position:relative; }
+.lab__glow{ position:absolute; inset:0; pointer-events:none; opacity:0;
+  background:radial-gradient(closest-side at 50% 52%, color-mix(in srgb,var(--accent) 38%, transparent), transparent 70%); }
+.lab__labels{ position:relative; height:2.4rem; z-index:2; }
+.lab__label{ position:absolute; inset:0; display:flex; align-items:center; gap:1.2rem; }
+.lab__label--design{ opacity:0; }
+.lab__label .ph{ font-family:var(--mono); font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; opacity:.5; }
+
+.mockup{ width:min(720px,100%); margin-inline:auto; aspect-ratio:16/10.5; position:relative; z-index:2; border-radius:14px; background:var(--panel); display:grid; grid-template-rows:auto 1.1fr 1fr auto; gap:clamp(.5rem,1.4vw,.9rem); padding:clamp(.7rem,1.8vw,1.1rem); border:1px solid var(--line); will-change:transform; }
+.mk-block{ position:relative; border-radius:8px; overflow:hidden; }
+.mk-wire,.mk-real{ position:absolute; inset:0; }
+.mk-real{ opacity:0; }
+.mk-wire{ border:1.3px dashed color-mix(in srgb,var(--ink) 36%, transparent); border-radius:8px; display:flex; align-items:center; justify-content:center; }
+.mk-wire .tag{ font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; opacity:.5; }
+.mk-wire .bars{ position:absolute; inset:14% 12%; display:flex; flex-direction:column; gap:.5rem; justify-content:center; }
+.mk-wire .bars i{ height:6px; background:color-mix(in srgb,var(--ink) 22%, transparent); border-radius:3px; display:block; }
+.mk-wire .bars i:nth-child(2){ width:82%; } .mk-wire .bars i:nth-child(3){ width:64%; }
+.mk-wire .x{ position:absolute; inset:0; }
+.mk-wire .x::before,.mk-wire .x::after{ content:""; position:absolute; width:140%; height:1px; background:color-mix(in srgb,var(--ink) 18%, transparent); top:50%; left:-20%; }
+.mk-wire .x::before{ transform:rotate(33deg);} .mk-wire .x::after{ transform:rotate(-33deg);}
+.mk-chrome{ display:flex; align-items:center; gap:.5rem; padding:0 .2rem; min-height:1.6rem; }
+.mk-chrome .mk-wire{ position:static; border-style:solid; border-color:color-mix(in srgb,var(--ink) 22%, transparent); width:100%; height:1.4rem; justify-content:flex-start; padding-left:.6rem; }
+.mk-chrome .mk-real{ position:absolute; display:flex; align-items:center; gap:.45rem; padding:0 .7rem; }
+.mk-chrome .dot{ width:.5rem; height:.5rem; border-radius:50%; background:color-mix(in srgb,var(--ink) 28%, transparent); }
+.mk-chrome .url{ margin-left:.4rem; font-family:var(--mono); font-size:.66rem; opacity:.55; }
+.mk-hero .mk-real{ display:flex; flex-direction:column; justify-content:center; gap:.5rem; padding:0 1.4rem; background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 26%, var(--panel)), var(--panel)); }
+.mk-hero .mk-real h4{ font-family:var(--serif); font-weight:500; font-size:clamp(1.1rem,3vw,1.7rem); line-height:1.05; letter-spacing:-.02em; }
+.mk-hero .mk-real span{ font-family:var(--mono); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.mk-row{ display:grid; grid-template-columns:1.3fr 1fr; gap:inherit; }
+.mk-text .mk-real{ display:flex; flex-direction:column; gap:.5rem; padding:1rem; justify-content:center; background:color-mix(in srgb,var(--ink) 6%, var(--panel)); }
+.mk-text .mk-real i{ height:7px; border-radius:4px; background:color-mix(in srgb,var(--ink) 16%, transparent); display:block; }
+.mk-text .mk-real i:nth-child(2){ width:90%;} .mk-text .mk-real i:nth-child(3){ width:78%;} .mk-text .mk-real i:nth-child(4){ width:88%;}
+.mk-img .mk-real{ background:radial-gradient(120% 120% at 30% 20%, color-mix(in srgb,var(--accent) 55%, transparent), transparent 60%), linear-gradient(160deg, color-mix(in srgb,var(--ink) 70%, var(--panel)), var(--ink)); }
+.mk-cta{ display:flex; min-height:2.4rem; }
+.mk-cta .mk-wire{ height:2.4rem; width:9rem; }
+.mk-cta .mk-real{ position:absolute; left:0; top:0; height:2.4rem; width:9rem; display:flex; align-items:center; justify-content:center; border-radius:999px; background:var(--accent); color:rgb(16,14,12); font-weight:600; font-size:.82rem; }
+
+/* ============================================================
+   6 · DIE ENTWICKLUNG · 7 · LAUNCH
+   ============================================================ */
+.build{ padding:clamp(6rem,13vh,11rem) 0; }
+.build__grid{ display:grid; gap:clamp(2rem,5vw,4rem); align-items:center; }
+.terminal{ font-family:var(--mono); font-size:clamp(.8rem,1.1vw,.92rem); border:1px solid var(--line); border-radius:12px; padding:1.4rem 1.5rem; background:color-mix(in srgb,var(--panel) 55%, transparent); max-width:34rem; }
+.terminal .ln{ display:flex; gap:.7rem; opacity:.82; padding:.2rem 0; }
+.terminal .ln .pre{ color:var(--accent); }
+.terminal .ln.ok{ color:var(--accent); align-items:center; }
+.terminal .ln.ok svg{ width:1rem; height:1rem; flex:none; }
+
+.launch{ padding:clamp(7rem,16vh,12rem) 0; text-align:center; }
+.launch__card{ width:min(560px,100%); margin:0 auto clamp(2.5rem,6vw,4rem); border-radius:16px; border:1px solid var(--line); background:var(--panel); padding:clamp(.7rem,1.6vw,1rem); position:relative; box-shadow:0 40px 110px rgba(0,0,0,.35); }
+.launch__bar{ display:flex; gap:.45rem; padding:.3rem .4rem .8rem; }
+.launch__bar .dot{ width:.5rem; height:.5rem; border-radius:50%; background:color-mix(in srgb,var(--ink) 26%, transparent); }
+.launch__screen{ aspect-ratio:16/9; border-radius:10px; display:flex; flex-direction:column; justify-content:center; gap:.6rem; padding:0 1.6rem; background:linear-gradient(140deg, color-mix(in srgb,var(--accent) 22%, var(--panel)), var(--panel)); }
+.launch__screen h4{ font-family:var(--serif); font-weight:500; font-size:clamp(1.2rem,3vw,1.9rem); letter-spacing:-.02em; }
+.launch__screen span{ font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.launch .live{ display:inline-flex; align-items:center; gap:.55rem; font-family:var(--mono); font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:1.4rem; }
+.launch .live .pulse{ width:.55rem; height:.55rem; border-radius:50%; background:var(--accent); position:relative; }
+.launch .live .pulse::after{ content:""; position:absolute; inset:-4px; border-radius:50%; border:1px solid var(--accent); animation:pulse 2s var(--ease) infinite; }
+@keyframes pulse{ 0%{ transform:scale(.6); opacity:.8;} 100%{ transform:scale(1.8); opacity:0;} }
+
+/* ============================================================
+   8 · DIE BEWEISE (Fallakten)
+   ============================================================ */
+.proof{ padding:clamp(6rem,13vh,11rem) 0; }
+.proof__intro{ margin-bottom:clamp(3.5rem,8vw,6rem); }
+.case{ display:grid; gap:clamp(1.5rem,4vw,3.5rem); padding:clamp(3rem,6vw,4.5rem) 0; border-top:1px solid var(--line); position:relative; }
+.case__ghost{ position:absolute; top:clamp(1.5rem,4vw,3rem); right:0; font-family:var(--mono); font-size:clamp(4rem,12vw,9rem); line-height:.8; opacity:.06; pointer-events:none; user-select:none; }
+.case__id h3{ font-family:var(--serif); font-weight:500; font-size:clamp(1.7rem,3.6vw,2.6rem); line-height:1.02; letter-spacing:-.02em; }
+.case__meta{ font-family:var(--mono); font-size:.74rem; letter-spacing:.06em; opacity:.5; margin-top:.8rem; }
+.case__fields{ display:grid; gap:1.7rem; }
+.field{ display:grid; gap:.45rem; }
+.field dt{ font-family:var(--mono); font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); opacity:.9; }
+.field dd{ font-size:clamp(1rem,1.2vw,1.08rem); line-height:1.55; max-width:54ch; opacity:.88; }
+.field.is-q dd{ font-family:var(--serif); font-style:italic; font-size:clamp(1.2rem,1.9vw,1.45rem); letter-spacing:-.01em; opacity:1; }
+@media (min-width:840px){
+  .case{ grid-template-columns:.6fr 1fr; }
+  .case__fields{ grid-template-columns:1fr 1fr; gap:1.9rem 2.6rem; }
+  .field.span{ grid-column:1 / -1; }
+}
+
+/* ============================================================
+   9 · WAS ES KOSTET — neu gestaltet, moderne Karten
+   ============================================================ */
+.pricing{ padding:clamp(6rem,13vh,11rem) 0; }
+.pricing__intro{ margin-bottom:clamp(3.5rem,8vw,5.5rem); max-width:42ch; }
+.tiers{ display:grid; gap:clamp(1rem,2vw,1.4rem); }
+@media (min-width:900px){ .tiers{ grid-template-columns:repeat(3,1fr); align-items:stretch; } }
+
+.tier{ position:relative; display:flex; flex-direction:column; gap:1.5rem;
+  padding:clamp(2rem,3vw,2.6rem); border-radius:22px;
+  background:color-mix(in srgb,var(--panel) 70%, transparent);
+  border:1px solid var(--line);
+  transition:transform .5s var(--ease-out), border-color .4s, box-shadow .5s var(--ease-out); }
+.tier:hover{ transform:translateY(-8px); border-color:color-mix(in srgb,var(--accent) 45%, var(--line)); box-shadow:0 30px 80px rgba(0,0,0,.28); }
+
+/* Hervorgehobene Empfehlung */
+.tier--pick{ background:color-mix(in srgb,var(--accent) 9%, var(--panel)); border-color:color-mix(in srgb,var(--accent) 35%, var(--line)); }
+@media (min-width:900px){ .tier--pick{ transform:scale(1.035); } .tier--pick:hover{ transform:scale(1.035) translateY(-8px); } }
+.tier--pick::after{ content:""; position:absolute; inset:-1px; border-radius:22px; padding:1px; pointer-events:none;
+  background:linear-gradient(160deg, color-mix(in srgb,var(--accent) 70%, transparent), transparent 55%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; }
+.tier__flag{ position:absolute; top:1.2rem; right:1.3rem; font-family:var(--mono); font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:rgb(16,14,12); background:var(--accent); padding:.3rem .6rem; border-radius:999px; }
+
+.tier__head{ display:flex; flex-direction:column; gap:.7rem; }
+.tier__name{ font-weight:600; font-size:clamp(1.15rem,1.6vw,1.35rem); letter-spacing:-.01em; }
+.tier__price{ display:flex; align-items:baseline; gap:.4rem; }
+.tier__price b{ font-weight:600; font-size:clamp(2.4rem,4.4vw,3.1rem); letter-spacing:-.035em; line-height:1; }
+.tier__price em{ font-style:normal; font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; opacity:.5; }
+.tier__for{ font-size:.98rem; opacity:.62; line-height:1.45; min-height:2.7em; }
+.tier__line{ height:1px; background:var(--line); }
+.tier__list{ list-style:none; display:grid; gap:.85rem; }
+.tier__list li{ font-size:.96rem; line-height:1.4; padding-left:1.7rem; position:relative; opacity:.9; }
+.tier__list li svg{ position:absolute; left:0; top:.18em; width:1.05rem; height:1.05rem; color:var(--accent); }
+.tier__cta{ margin-top:auto; display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  padding:.95rem 1.2rem; border-radius:999px; font-weight:600; font-size:.95rem;
+  border:1px solid var(--accent); color:var(--accent);
+  transition:background .35s var(--ease), color .35s var(--ease), gap .35s var(--ease); }
+.tier__cta:hover{ gap:.85rem; }
+.tier--pick .tier__cta{ background:var(--accent); color:rgb(16,14,12); border-color:var(--accent); }
+.tier:not(.tier--pick) .tier__cta:hover{ background:var(--accent); color:rgb(16,14,12); }
+.pricing__fine{ margin-top:1.8rem; font-family:var(--mono); font-size:.74rem; letter-spacing:.02em; opacity:.45; }
+
+/* ============================================================
+   10 · DEINE NACHRICHT (Kontakt)
+   ============================================================ */
+.contact{ padding:clamp(7rem,15vh,12rem) 0 clamp(4rem,8vh,6rem); min-height:90svh; display:flex; align-items:center; }
+.contact__inner{ width:100%; }
+.contact__lead{ font-family:var(--serif); font-weight:400; font-size:clamp(1.8rem,4.2vw,3.1rem); line-height:1.16; letter-spacing:-.02em; max-width:20ch; margin-bottom:clamp(2.5rem,6vw,4rem); }
+.field-msg{ position:relative; max-width:42rem; }
+.field-msg textarea{ width:100%; min-height:8rem; resize:vertical; background:transparent; border:none; border-bottom:1px solid var(--line); color:var(--ink); font-family:var(--serif); font-size:clamp(1.35rem,2.6vw,1.95rem); line-height:1.35; text-transform:lowercase; letter-spacing:-.01em; padding:.4rem .2rem 1.2rem; transition:border-color .4s var(--ease); }
+.field-msg textarea::placeholder{ color:var(--ink); opacity:.3; }
+.field-msg textarea:focus{ outline:none; border-color:var(--accent); }
+.pill{ margin-top:2rem; display:inline-flex; align-items:center; gap:.8rem; background:var(--accent); color:rgb(16,14,12); font-family:var(--sans); font-weight:600; font-size:1rem; padding:.95rem 1.5rem; border-radius:999px; border:none; cursor:pointer; transition:transform .4s var(--ease), box-shadow .4s var(--ease); }
+.pill:hover{ transform:translateY(-2px); box-shadow:0 14px 40px color-mix(in srgb,var(--accent) 45%, transparent); }
+.pill .plane{ width:1.15rem; height:1.15rem; transition:transform .45s var(--ease); }
+.pill:hover .plane{ transform:translate(.35rem,-.35rem); }
+.pill__alt{ display:block; margin-top:1.2rem; font-family:var(--mono); font-size:.78rem; opacity:.5; }
+.pill__alt a{ border-bottom:1px solid color-mix(in srgb,var(--accent) 60%, transparent); }
+
+.foot{ border-top:1px solid var(--line); padding:2.2rem 0; font-family:var(--mono); font-size:.74rem; letter-spacing:.03em; opacity:.55; }
+.foot .wrap{ display:flex; flex-wrap:wrap; gap:.6rem 1.6rem; justify-content:space-between; align-items:center; }
+.foot a:hover{ color:var(--accent); }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none !important; transition:none !important; }
+  [data-reveal],[data-mask],[data-stagger] > *{ opacity:1 !important; transform:none !important; clip-path:none !important; }
+  .cursor{ opacity:1; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#nachricht">Zum Inhalt springen</a>
+<div class="grain" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <a class="nav__mark" href="#top" data-scroll><b>floriders</b> — webdesign & entwicklung</a>
+  <a class="nav__cta" href="#kontakt" data-scroll>schreib mir →</a>
+</header>
+
+<main id="top">
+
+  <!-- 1 · DIE NACHRICHT -->
+  <section class="hero" id="nachricht">
+    <div class="wrap" style="display:contents">
+      <div class="wrap">
+        <h1 class="hero__msg" id="heroMsg" data-parallax="0.12" aria-label="hi, ich hab da so eine idee. weiß ehrlich gesagt nicht, ob das überhaupt geht. oder was das kostet.">
+          <span class="l1"></span><span class="l2"></span><span class="cursor" aria-hidden="true"></span>
+        </h1>
+      </div>
+      <div class="wrap">
+        <div class="hero__hint"><span class="rule" aria-hidden="true"></span><span>scrollen</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · DIE FRAGEN -->
+  <section class="questions" id="fragen">
+    <div class="wrap questions__grid">
+      <div>
+        <p class="eyebrow" data-reveal>01 — die fragen</p>
+        <p class="lead" data-mask style="margin-top:1.4rem">Bevor ich etwas baue, stelle ich Fragen. Die richtigen Fragen sind schon die halbe Lösung.</p>
+      </div>
+      <div class="q-notes" data-stagger>
+        <p class="q-note n1">Wer benutzt das wirklich — und in welchem Moment?</p>
+        <p class="q-note n2">Was ist das Problem hinter dem Wunsch?</p>
+        <p class="q-note n3">Wo soll der Besucher als Nächstes klicken?</p>
+        <p class="q-note n4">Wovon hängt am Ende die Entscheidung ab?</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · DAS KONZEPT -->
+  <section class="concept" id="konzept">
+    <div class="wrap">
+      <div class="concept__head">
+        <p class="eyebrow" data-reveal>02 — das konzept</p>
+        <p class="lead" data-mask style="margin-top:1.4rem">Aus Fragen wird Struktur. Jede Seite bekommt einen Platz, jeder Klick ein Ziel.</p>
+      </div>
+      <div data-reveal>
+        <svg class="flow" viewBox="0 0 900 300" role="img" aria-label="Sitemap: Start verzweigt zu Angebot, Über mich und Kontakt; Angebot führt zu Termin.">
+          <path class="edge" d="M190 150 H300 V60 H360"/>
+          <path class="edge" d="M190 150 H360"/>
+          <path class="edge" d="M190 150 H300 V240 H360"/>
+          <path class="edge" d="M520 60 H660"/>
+          <g class="node-g root"><rect class="node-fill" x="40" y="125" width="150" height="50" rx="8"/><rect class="node" x="40" y="125" width="150" height="50" rx="8"/><text x="115" y="155" text-anchor="middle">start</text></g>
+          <g class="node-g"><rect class="node-fill" x="360" y="35" width="160" height="50" rx="8"/><rect class="node" x="360" y="35" width="160" height="50" rx="8"/><text x="440" y="65" text-anchor="middle">angebot</text></g>
+          <g class="node-g"><rect class="node-fill" x="360" y="125" width="160" height="50" rx="8"/><rect class="node" x="360" y="125" width="160" height="50" rx="8"/><text x="440" y="155" text-anchor="middle">über mich</text></g>
+          <g class="node-g"><rect class="node-fill" x="360" y="215" width="160" height="50" rx="8"/><rect class="node" x="360" y="215" width="160" height="50" rx="8"/><text x="440" y="245" text-anchor="middle">kontakt</text></g>
+          <g class="node-g"><rect class="node-fill" x="660" y="35" width="180" height="50" rx="8"/><rect class="node" x="660" y="35" width="180" height="50" rx="8"/><text x="750" y="65" text-anchor="middle">termin sichern</text></g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4+5 · DAS LABOR -->
+  <section class="lab" id="labor">
+    <div class="lab__stage">
+      <div class="lab__glow" aria-hidden="true"></div>
+      <div class="wrap">
+        <div class="lab__labels">
+          <div class="lab__label lab__label--wire"><span class="eyebrow">03 — das wireframe</span><span class="ph">low fidelity · graustufen</span></div>
+          <div class="lab__label lab__label--design"><span class="eyebrow">04 — das design</span><span class="ph">high fidelity · farbe flutet rein</span></div>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="mockup" id="mockup" aria-hidden="true">
+          <div class="mk-block mk-chrome">
+            <div class="mk-wire"><span class="tag">header</span></div>
+            <div class="mk-real"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">brothers-barbershop.at</span></div>
+          </div>
+          <div class="mk-block mk-hero">
+            <div class="mk-wire"><span class="tag">hero</span></div>
+            <div class="mk-real"><span>vienna · seit 2014</span><h4>Der Schnitt, der hängenbleibt.</h4></div>
+          </div>
+          <div class="mk-block mk-row">
+            <div class="mk-block mk-text"><div class="mk-wire"><span class="bars"><i></i><i></i><i></i></span></div><div class="mk-real"><i></i><i></i><i></i><i></i></div></div>
+            <div class="mk-block mk-img"><div class="mk-wire"><span class="x"></span><span class="tag">img</span></div><div class="mk-real"></div></div>
+          </div>
+          <div class="mk-block mk-cta">
+            <div class="mk-wire"><span class="tag">cta</span></div>
+            <div class="mk-real">Termin sichern</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · DIE ENTWICKLUNG -->
+  <section class="build" id="entwicklung">
+    <div class="wrap build__grid">
+      <div>
+        <p class="eyebrow" data-reveal>05 — die entwicklung</p>
+        <p class="lead" data-mask style="margin-top:1.4rem">Sauber gebaut, schnell geladen, wartbar. Technik, die man nicht sieht — aber spürt.</p>
+        <p class="note" data-reveal style="margin-top:1.6rem">Keine aufgeblähten Baukästen. Handgeschriebener Code, der genau das tut, was er soll.</p>
+      </div>
+      <div class="terminal" data-stagger aria-hidden="true">
+        <div class="ln"><span class="pre">$</span><span>build · index.html</span></div>
+        <div class="ln"><span class="pre">›</span><span>assets optimiert · 312&nbsp;kb</span></div>
+        <div class="ln"><span class="pre">›</span><span>deploy · github pages</span></div>
+        <div class="ln ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>fertig · 0 fehler</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · LAUNCH -->
+  <section class="launch" id="launch">
+    <div class="wrap">
+      <div class="launch__card" data-reveal>
+        <div class="launch__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="launch__screen"><span>vienna · seit 2014</span><h4>Der Schnitt, der hängenbleibt.</h4></div>
+      </div>
+      <div class="live" data-reveal><span class="pulse" aria-hidden="true"></span><span>live</span></div>
+      <p class="lead" data-mask style="margin:0 auto;max-width:18ch">Live. Und genau so, wie es gedacht war.</p>
+    </div>
+  </section>
+
+  <!-- 8 · DIE BEWEISE -->
+  <section class="proof" id="beweise">
+    <div class="wrap">
+      <div class="proof__intro">
+        <p class="eyebrow" data-reveal>07 — die beweise</p>
+        <p class="lead" data-mask style="margin-top:1.4rem">Zwei Ideen, die genau so anfingen. Hier, was daraus wurde.</p>
+      </div>
+
+      <article class="case">
+        <span class="case__ghost" data-parallax="0.18" aria-hidden="true">01</span>
+        <div class="case__id" data-reveal>
+          <h3>Brothers Barbershop</h3>
+          <p class="case__meta">vienna · webdesign + dev · einseiter</p>
+        </div>
+        <dl class="case__fields" data-stagger>
+          <div class="field"><dt>Das Problem</dt><dd>Ein Barbershop mit treuer Stammkundschaft, aber online quasi unsichtbar. Termine liefen über Zuruf.</dd></div>
+          <div class="field is-q"><dt>Die Frage, die ich stellte</dt><dd>Was muss ein Besucher in fünf Sekunden spüren, damit er sich einen Termin holt?</dd></div>
+          <div class="field"><dt>Die Entscheidung</dt><dd>Kein Tool-Wust. Eine kinematische Startszene, klare Zeiten, ein Weg zum Termin.</dd></div>
+          <div class="field"><dt>Der Tradeoff</dt><dd>Weniger Funktionen, dafür Atmosphäre und Tempo — eine Seite, die nach Handwerk aussieht, nicht nach Software.</dd></div>
+          <div class="field span"><dt>Das Ergebnis</dt><dd>Eine digitale Visitenkarte, die zum Wiederkommen einlädt — und den Laden so wirken lässt, wie er sich anfühlt.</dd></div>
+        </dl>
+      </article>
+
+      <article class="case">
+        <span class="case__ghost" data-parallax="0.18" aria-hidden="true">02</span>
+        <div class="case__id" data-reveal>
+          <h3>Moritz Gallery</h3>
+          <p class="case__meta">künstler moritz geberth · galerie · zweisprachig</p>
+        </div>
+        <dl class="case__fields" data-stagger>
+          <div class="field"><dt>Das Problem</dt><dd>Ein Künstler mit wachsendem Werk, aber ohne Bühne, die den Arbeiten gerecht wird.</dd></div>
+          <div class="field is-q"><dt>Die Frage, die ich stellte</dt><dd>Wie zeigt man Kunst online, ohne dass die Seite selbst zu laut wird?</dd></div>
+          <div class="field"><dt>Die Entscheidung</dt><dd>Die Galerie tritt zurück. Schwarz, Raum, die Werke im Zentrum — mit echtem „verkauft"-Status und DE/EN-Wechsel.</dd></div>
+          <div class="field"><dt>Der Tradeoff</dt><dd>Maximale Ruhe statt maximaler Effekte. Die Technik — dynamische Bilder, Kompression — bleibt unsichtbar.</dd></div>
+          <div class="field span"><dt>Das Ergebnis</dt><dd>Ein Atelier, das sich online wie eine Ausstellung anfühlt.</dd></div>
+        </dl>
+      </article>
+    </div>
+  </section>
+
+  <!-- 9 · WAS ES KOSTET -->
+  <section class="pricing" id="preise">
+    <div class="wrap">
+      <div class="pricing__intro">
+        <p class="eyebrow" data-reveal>08 — was es kostet</p>
+        <p class="lead" data-mask style="margin-top:1.4rem">Du hast am Anfang gefragt, was das kostet. Hier die ehrliche Antwort — drei Wege, je nachdem, wie weit deine Idee schon ist.</p>
+      </div>
+
+      <div class="tiers" data-stagger>
+        <div class="tier">
+          <div class="tier__head">
+            <h3 class="tier__name">Der Auftakt</h3>
+            <p class="tier__price"><b>€1.490</b><em>ab · netto</em></p>
+            <p class="tier__for">Eine einzelne, starke Seite. Eine Botschaft, ein klares Ziel.</p>
+          </div>
+          <div class="tier__line"></div>
+          <ul class="tier__list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Konzept &amp; Text-Feinschliff</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Individuelles Design — kein Template</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Eine Seite, mobil zuerst</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Kontakt- oder Termin-Anbindung</li>
+          </ul>
+          <a class="tier__cta" href="#kontakt" data-scroll>Passt zu meiner Idee</a>
+        </div>
+
+        <div class="tier tier--pick">
+          <span class="tier__flag">am häufigsten</span>
+          <div class="tier__head">
+            <h3 class="tier__name">Das Fundament</h3>
+            <p class="tier__price"><b>€2.900</b><em>ab · netto</em></p>
+            <p class="tier__for">Eine vollständige Website, die mitwächst.</p>
+          </div>
+          <div class="tier__line"></div>
+          <ul class="tier__list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Alles aus „Der Auftakt"</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Mehrere Bereiche &amp; Inhaltsstruktur</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Animation mit Bedeutung</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Grundlagen-SEO</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Impressum &amp; Datenschutz (AT-konform)</li>
+          </ul>
+          <a class="tier__cta" href="#kontakt" data-scroll>Das will ich</a>
+        </div>
+
+        <div class="tier">
+          <div class="tier__head">
+            <h3 class="tier__name">Maßarbeit</h3>
+            <p class="tier__price"><b>individuell</b></p>
+            <p class="tier__for">Wenn die Idee größer ist als ein Template.</p>
+          </div>
+          <div class="tier__line"></div>
+          <ul class="tier__list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Konfiguratoren, Buchung, Mehrsprachigkeit</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Gemeinsame Konzeption</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Maßgeschneiderte Umsetzung</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Betreuung auf Wunsch</li>
+          </ul>
+          <a class="tier__cta" href="#kontakt" data-scroll>Lass uns reden</a>
+        </div>
+      </div>
+      <p class="pricing__fine">Alle Preise netto, zzgl. USt. Endpreis nach einem kurzen Gespräch — weil jede Idee anders ist.</p>
+    </div>
+  </section>
+
+  <!-- 10 · DEINE NACHRICHT -->
+  <section class="contact" id="kontakt">
+    <div class="wrap contact__inner">
+      <p class="eyebrow" data-reveal>09 — deine nachricht</p>
+      <p class="contact__lead" data-mask style="margin-top:1.4rem">Du hast eine Idee, die du noch nicht ganz greifen kannst? Genau damit fange ich am liebsten an.</p>
+      <div class="field-msg" data-reveal>
+        <label for="msg" class="skip">Deine Nachricht</label>
+        <textarea id="msg" placeholder="hi, ich hab da so eine idee…"></textarea>
+        <button class="pill" id="sendBtn" type="button">
+          <span>Nachricht abschicken</span>
+          <svg class="plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+        <span class="pill__alt">oder direkt: <a id="mailLink" href="mailto:hallo@floriders.at">hallo@floriders.at</a></span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>© <span id="yr"></span> floriders · webdesign &amp; entwicklung · österreich</span>
+    <span><a href="#" data-scroll>impressum</a> &nbsp;·&nbsp; <a href="#" data-scroll>datenschutz</a></span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('yr').textContent = new Date().getFullYear();
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* ---------- Palette-Engine ---------- */
+  const PAPER=[[245,242,236],[24,22,19],[219,214,205],[252,250,247],[188,143,103]];
+  const GRAY =[[219,218,213],[44,44,44],[176,174,168],[230,229,225],[150,150,150]];
+  const DARK =[[16,14,12],[240,234,224],[54,49,42],[27,23,19],[240,184,96]];
+  const VARS=['--bg','--ink','--line','--panel','--accent'];
+  const lp=(a,b,t)=>Math.round(a+(b-a)*t);
+  const mix=(A,B,t)=>A.map((c,i)=>[lp(c[0],B[i][0],t),lp(c[1],B[i][1],t),lp(c[2],B[i][2],t)]);
+  const setPalette=P=>{const r=document.documentElement;P.forEach((c,i)=>r.style.setProperty(VARS[i],`rgb(${c[0]},${c[1]},${c[2]})`));};
+  setPalette(PAPER);
+
+  /* ---------- Hero tippt sich ---------- */
+  const L1="hi, ich hab da so eine idee …";
+  const L2="weiß ehrlich gesagt nicht, ob das überhaupt geht. oder was das kostet.";
+  const e1=document.querySelector('#heroMsg .l1'), e2=document.querySelector('#heroMsg .l2');
+  if(reduce){ e1.textContent=L1; e2.textContent=L2; }
+  else{ let i=0,j=0;
+    (function a(){ if(i<=L1.length){e1.textContent=L1.slice(0,i++);setTimeout(a,i<5?90:42);} else setTimeout(b,420); })();
+    function b(){ if(j<=L2.length){e2.textContent=L2.slice(0,j++);setTimeout(b,26);} } }
+
+  /* ---------- Lenis ---------- */
+  let lenis=null;
+  if(!reduce && window.Lenis){
+    lenis=new Lenis({lerp:.09,smoothWheel:true});
+    lenis.on('scroll',ScrollTrigger.update);
+    gsap.ticker.add(t=>lenis.raf(t*1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+  document.querySelectorAll('[data-scroll]').forEach(a=>{
+    a.addEventListener('click',e=>{
+      const id=a.getAttribute('href'); if(!id||id==='#'){e.preventDefault();return;}
+      const el=document.querySelector(id); if(!el)return;
+      e.preventDefault(); lenis?lenis.scrollTo(el):el.scrollIntoView({behavior:reduce?'auto':'smooth'});
+    });
+  });
+
+  /* ---------- Nav-CTA nach Hero einblenden ---------- */
+  const nav=document.getElementById('nav');
+  ScrollTrigger.create({trigger:'#nachricht',start:'bottom 80%',
+    onEnter:()=>nav.classList.add('show'), onLeaveBack:()=>nav.classList.remove('show')});
+
+  /* ---------- Scroll-Fortschritt ---------- */
+  gsap.to('.progress',{scaleX:1,ease:'none',
+    scrollTrigger:{trigger:document.documentElement,start:'top top',end:'bottom bottom',scrub:.3}});
+
+  if(reduce){
+    gsap.set('[data-reveal],[data-mask]',{opacity:1,y:0,clipPath:'none'});
+    gsap.set('[data-stagger] > *',{opacity:1,y:0});
+  } else {
+    /* fade-up */
+    gsap.utils.toArray('[data-reveal]').forEach(el=>{
+      gsap.to(el,{opacity:1,y:0,duration:.9,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 86%'}});
+    });
+    /* clip-mask wipe — für Headlines */
+    gsap.utils.toArray('[data-mask]').forEach(el=>{
+      gsap.to(el,{opacity:1,y:0,clipPath:'inset(0 0 0% 0)',duration:1,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 85%'}});
+    });
+    /* gestaffelte Gruppen */
+    gsap.utils.toArray('[data-stagger]').forEach(group=>{
+      gsap.to(group.children,{opacity:1,y:0,duration:.8,ease:'power3.out',stagger:.1,
+        scrollTrigger:{trigger:group,start:'top 82%'}});
+    });
+    /* eyebrow-Linie wächst */
+    gsap.utils.toArray('.eyebrow').forEach(el=>{
+      gsap.fromTo(el,{'--ll':0},{duration:.8,ease:'power2.out',
+        scrollTrigger:{trigger:el,start:'top 88%'}});
+    });
+    /* dezente Parallax */
+    gsap.utils.toArray('[data-parallax]').forEach(el=>{
+      const amt=parseFloat(el.dataset.parallax)||.15;
+      gsap.to(el,{yPercent:-amt*100,ease:'none',
+        scrollTrigger:{trigger:el,start:'top bottom',end:'bottom top',scrub:true}});
+    });
+  }
+
+  /* ---------- Konzept: Linien zeichnen, dann Knoten poppen ---------- */
+  if(!reduce){
+    gsap.utils.toArray('.flow .edge').forEach(p=>{
+      const len=p.getTotalLength(); p.style.strokeDasharray=len; p.style.strokeDashoffset=len;
+      gsap.to(p,{strokeDashoffset:0,ease:'power2.inOut',
+        scrollTrigger:{trigger:'.concept',start:'top 62%',end:'center 65%',scrub:.8}});
+    });
+    gsap.from('.flow .node-g',{scale:.6,opacity:0,transformOrigin:'center',duration:.6,ease:'back.out(1.7)',stagger:.12,
+      scrollTrigger:{trigger:'.concept',start:'top 55%'}});
+  }
+
+  /* ============================================================
+     LABOR — Wireframe → Design (EINZIGER PIN)
+     Timeline scrubt: Label-Wechsel · Glow · Politur ·
+     Fidelity-Crossfade · Palette Grau → Dark-Luxury.
+     ============================================================ */
+  if(reduce){
+    ScrollTrigger.create({trigger:'#labor',start:'top 60%',
+      onEnter:()=>{setPalette(DARK);gsap.set('.mk-wire',{opacity:0});gsap.set('.mk-real',{opacity:1});
+        gsap.set('.lab__label--wire',{opacity:0});gsap.set('.lab__label--design',{opacity:1});gsap.set('.lab__glow',{opacity:.5});},
+      onLeaveBack:()=>{setPalette(GRAY);gsap.set('.mk-wire',{opacity:1});gsap.set('.mk-real',{opacity:0});
+        gsap.set('.lab__label--wire',{opacity:1});gsap.set('.lab__label--design',{opacity:0});gsap.set('.lab__glow',{opacity:0});}});
+    // Konzept→Grau sofort
+    ScrollTrigger.create({trigger:'#konzept',start:'top 60%',onEnter:()=>setPalette(GRAY),onLeaveBack:()=>setPalette(PAPER)});
+  } else {
+    // Phase A: Papier → Grau über die Konzept-Sektion
+    const a={t:0};
+    gsap.to(a,{t:1,ease:'none',onUpdate:()=>setPalette(mix(PAPER,GRAY,a.t)),
+      scrollTrigger:{trigger:'#konzept',start:'top 70%',end:'bottom 60%',scrub:.6}});
+
+    // Phase B: der Morph
+    const pal={t:0};
+    const morph=gsap.timeline({scrollTrigger:{trigger:'#labor',start:'top top',end:'+=185%',scrub:.7,pin:'.lab__stage',anticipatePin:1}});
+    morph.to(pal,{t:1,ease:'none',onUpdate:()=>setPalette(mix(GRAY,DARK,pal.t))},0);            // Palette flutet
+    morph.to('.lab__glow',{opacity:.55,ease:'power1.in'},0.30);                                  // Amber-Bloom an
+    morph.to('.lab__label--wire',{opacity:0,duration:.25},0.08)
+         .to('.lab__label--design',{opacity:1,duration:.35},0.40);                               // Label-Wechsel
+    morph.fromTo('.mockup',{scale:.985,boxShadow:'0 0 0 rgba(0,0,0,0)'},
+         {scale:1,boxShadow:'0 50px 130px rgba(0,0,0,.55)',duration:.6,ease:'power2.out'},0.15);  // Politur
+    morph.to('.mk-wire',{opacity:0,duration:.4,ease:'power1.inOut'},0.20)
+         .to('.mk-real',{opacity:1,duration:.45,ease:'power1.inOut'},0.32);                       // Fidelity-Crossfade
+  }
+
+  /* ---------- Mail-Pill ---------- */
+  const MAIL='hallo@floriders.at', ta=document.getElementById('msg');
+  document.getElementById('sendBtn').addEventListener('click',()=>{
+    const body=(ta.value||'').trim()||'hi, ich hab da so eine idee…';
+    window.location.href=`mailto:${MAIL}?subject=${encodeURIComponent('Idee für ein Projekt')}&body=${encodeURIComponent(body)}`;
+  });
+
+  window.addEventListener('load',()=>ScrollTrigger.refresh());
+})();
+</script>
+</body>
+</html>

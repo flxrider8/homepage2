@@ -133,9 +133,39 @@ section{ position:relative; }
 .navmenu.open .navmenu__mail{ opacity:.62; transform:none; }
 .navmenu.open .navmenu__mail:hover{ opacity:1; color:var(--accent); }
 
-html.menu-open{ overflow:hidden; }
+html.scroll-lock{ overflow:hidden; }
 
 @media (min-width:761px){ .nav__burger{ display:none; } .navmenu{ display:none; } }
+
+/* ---------- Beweise: Live-Vorschau-Lightbox ---------- */
+.lightbox{ position:fixed; inset:0; z-index:170; display:flex; align-items:center; justify-content:center; padding:clamp(1rem,4vw,2.5rem);
+  opacity:0; visibility:hidden; pointer-events:none;
+  background:color-mix(in srgb, var(--ink) 58%, transparent);
+  backdrop-filter:blur(18px) saturate(140%); -webkit-backdrop-filter:blur(18px) saturate(140%);
+  transition:opacity .45s var(--ease), visibility 0s linear .45s; }
+.lightbox.open{ opacity:1; visibility:visible; pointer-events:auto; transition:opacity .45s var(--ease), visibility 0s; }
+.lightbox__card{ position:relative; width:100%; max-width:42rem; max-height:88vh; overflow-y:auto; border-radius:22px;
+  background:var(--panel); border:1px solid var(--line); box-shadow:0 60px 140px rgba(0,0,0,.45);
+  transform:translateY(26px) scale(.97); opacity:0; transition:transform .5s var(--ease-out), opacity .5s var(--ease-out); }
+.lightbox.open .lightbox__card{ transform:none; opacity:1; }
+.lightbox__close{ position:absolute; top:.9rem; right:.9rem; z-index:2; width:2.3rem; height:2.3rem; border-radius:50%; border:none;
+  background:color-mix(in srgb, black 38%, transparent); color:#fff; backdrop-filter:blur(6px); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .3s var(--ease), transform .3s var(--ease); }
+.lightbox__close:hover{ background:color-mix(in srgb, black 55%, transparent); transform:scale(1.06); }
+.lightbox__close svg{ width:1rem; height:1rem; }
+.lightbox__shot{ position:relative; aspect-ratio:16/10; background:linear-gradient(150deg, color-mix(in srgb,var(--accent) 26%, var(--ink)), var(--ink)); overflow:hidden; }
+.lightbox__shot img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top; opacity:0; transition:opacity .4s var(--ease); }
+.lightbox__shot img[data-loaded]{ opacity:1; }
+.lightbox__fallback{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.lightbox__shot img[data-loaded] ~ .lightbox__fallback{ display:none; }
+.lightbox__fmark{ font-family:var(--serif); font-weight:600; font-size:clamp(2.4rem,7vw,4rem); letter-spacing:-.03em; color:color-mix(in srgb, white 88%, var(--accent)); opacity:.85; }
+.lightbox__chrome{ position:absolute; left:0; right:0; top:0; display:flex; align-items:center; gap:.5rem; padding:.8rem 1rem; background:linear-gradient(to bottom, rgba(0,0,0,.42), transparent); }
+.lightbox__chrome .dot{ width:.55rem; height:.55rem; border-radius:50%; background:rgba(255,255,255,.55); }
+.lightbox__url{ margin-left:.4rem; font-family:var(--mono); font-size:.7rem; letter-spacing:.04em; color:rgba(255,255,255,.85); }
+.lightbox__body{ padding:clamp(1.6rem,4vw,2.3rem); }
+.lightbox__title{ font-family:var(--serif); font-weight:600; font-size:clamp(1.5rem,3.4vw,2rem); letter-spacing:-.02em; }
+.lightbox__desc{ margin-top:.9rem; font-size:1rem; line-height:1.55; opacity:.7; max-width:46ch; }
+.lightbox__cta{ margin-top:1.6rem; }
 
 /* ============================================================
    1 · DIE NACHRICHT
@@ -508,6 +538,27 @@ html.menu-open{ overflow:hidden; }
   </div>
 </nav>
 
+<div class="lightbox" id="caseLightbox" aria-hidden="true" inert>
+  <div class="lightbox__card" id="caseLightboxCard" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
+    <button class="lightbox__close" type="button" data-lbclose aria-label="Vorschau schließen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div class="lightbox__shot">
+      <img id="lightboxImg" alt="" />
+      <div class="lightbox__fallback" id="lightboxFallback" aria-hidden="true">
+        <span class="lightbox__fmark" id="lightboxFallbackMark"></span>
+      </div>
+      <div class="lightbox__chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="lightbox__url" id="lightboxUrl"></span></div>
+    </div>
+    <div class="lightbox__body">
+      <p class="eyebrow" id="lightboxMeta"></p>
+      <h3 class="lightbox__title" id="lightboxTitle" style="margin-top:.8rem"></h3>
+      <p class="lightbox__desc" id="lightboxDesc"></p>
+      <a class="btn btn--primary lightbox__cta" id="lightboxCta" target="_blank" rel="noopener">Website live ansehen →</a>
+    </div>
+  </div>
+</div>
+
 <main id="top">
 
   <!-- 1 · DIE NACHRICHT -->
@@ -693,8 +744,7 @@ html.menu-open{ overflow:hidden; }
             <h3>Brothers Barbershop</h3>
             <p class="case__meta">vienna · einseiter</p>
           </div>
-          <!-- TODO: echte Live-URL eintragen -->
-          <a class="case__live" href="#" target="_blank" rel="noopener">Live ansehen <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+          <a class="case__live" href="https://moonlit-speculoos-26bb8a.netlify.app" target="_blank" rel="noopener" data-case="brothers">Live ansehen <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
         </div>
         <p class="case__q" data-mask>„Was muss ein Besucher in fünf Sekunden spüren, damit er sich einen Termin holt?"</p>
         <p class="case__result" data-reveal>Eine kinematische Startszene, klare Zeiten, ein Weg zum Termin — eine Seite, die nach Handwerk aussieht, nicht nach Software.</p>
@@ -708,8 +758,7 @@ html.menu-open{ overflow:hidden; }
             <h3>Moritz Gallery</h3>
             <p class="case__meta">künstler moritz geberth · galerie · de/en</p>
           </div>
-          <!-- TODO: echte Live-URL eintragen -->
-          <a class="case__live" href="#" target="_blank" rel="noopener">Live ansehen <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+          <a class="case__live" href="https://moritzgallery.at" target="_blank" rel="noopener" data-case="moritz">Live ansehen <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
         </div>
         <p class="case__q" data-mask>„Wie zeigt man Kunst online, ohne dass die Seite selbst zu laut wird?"</p>
         <p class="case__result" data-reveal>Die Galerie tritt zurück: Schwarz, Raum, die Werke im Zentrum — mit echtem „verkauft"-Status. Ein Atelier, das sich wie eine Ausstellung anfühlt.</p>
@@ -1070,40 +1119,135 @@ html.menu-open{ overflow:hidden; }
 <script>
 (function(){
   "use strict";
-  const burger=document.getElementById('navBurger');
-  const menu=document.getElementById('navMenu');
-  if(!burger||!menu) return;
   const root=document.documentElement;
-  let open=false;
 
-  function setOpen(v){
-    if(v===open) return;
-    open=v;
-    burger.setAttribute('aria-expanded', String(v));
-    burger.setAttribute('aria-label', v?'Menü schließen':'Menü öffnen');
-    menu.classList.toggle('open', v);
-    menu.setAttribute('aria-hidden', String(!v));
-    menu.toggleAttribute('inert', !v);
-    root.classList.toggle('menu-open', v);
+  /* ---------- geteilte Scroll-Sperre (Nav-Menü + Lightbox) ----------
+     Zählt, statt zu booleschen — falls beide je einmal sperren/öffnen,
+     hebt das eine das andere nicht versehentlich auf. Nur overflow:hidden,
+     KEINE Höhenänderung an <html> — sonst verfälscht das Lenis' (debounced)
+     Scrollhöhen-Messung und scrollTo() landet danach im Leeren. */
+  let lockCount=0;
+  function lockScroll(v){
+    lockCount=Math.max(0, lockCount+(v?1:-1));
+    const locked=lockCount>0;
+    root.classList.toggle('scroll-lock', locked);
     const lenis=window.__lenis;
-    if(lenis){ v?lenis.stop():lenis.start(); }
-    if(v){ menu.querySelector('a')?.focus({preventScroll:true}); }
+    if(lenis){ locked?lenis.stop():lenis.start(); }
   }
 
-  burger.addEventListener('click', ()=> setOpen(!open));
-  /* Capture-Phase: muss VOR dem data-scroll-Handler (Lenis) auf dem Link feuern,
-     sonst läuft scrollTo() ins Leere, weil Lenis noch pausiert ist.
-     Schließt bei: Close-Button, Klick auf einen Link, oder Klick irgendwo
-     außerhalb von Text/Buttons (egal ob Backdrop oder Innenraum-Padding). */
-  menu.addEventListener('click', e=>{
-    if(e.target.closest('[data-navclose],[data-navlink]') || !e.target.closest('a,button')) setOpen(false);
-  }, true);
-  window.addEventListener('keydown', e=>{
-    if(e.key==='Escape' && open){ setOpen(false); burger.focus({preventScroll:true}); }
-  });
-  window.matchMedia('(min-width:761px)').addEventListener('change', e=>{
-    if(e.matches && open) setOpen(false);
-  });
+  /* ---------- Burger-Menü ---------- */
+  (function(){
+    const burger=document.getElementById('navBurger');
+    const menu=document.getElementById('navMenu');
+    if(!burger||!menu) return;
+    let open=false;
+
+    function setOpen(v){
+      if(v===open) return;
+      open=v;
+      burger.setAttribute('aria-expanded', String(v));
+      burger.setAttribute('aria-label', v?'Menü schließen':'Menü öffnen');
+      menu.classList.toggle('open', v);
+      menu.setAttribute('aria-hidden', String(!v));
+      menu.toggleAttribute('inert', !v);
+      lockScroll(v);
+      if(v){ menu.querySelector('a')?.focus({preventScroll:true}); }
+    }
+
+    burger.addEventListener('click', ()=> setOpen(!open));
+    /* Capture-Phase: muss VOR dem data-scroll-Handler (Lenis) auf dem Link feuern,
+       sonst läuft scrollTo() ins Leere, weil Lenis noch pausiert ist.
+       Schließt bei: Close-Button, Klick auf einen Link, oder Klick irgendwo
+       außerhalb von Text/Buttons (egal ob Backdrop oder Innenraum-Padding). */
+    menu.addEventListener('click', e=>{
+      if(e.target.closest('[data-navclose],[data-navlink]') || !e.target.closest('a,button')) setOpen(false);
+    }, true);
+    window.addEventListener('keydown', e=>{
+      if(e.key==='Escape' && open){ setOpen(false); burger.focus({preventScroll:true}); }
+    });
+    window.matchMedia('(min-width:761px)').addEventListener('change', e=>{
+      if(e.matches && open) setOpen(false);
+    });
+  })();
+
+  /* ---------- Beweise: Live-Vorschau-Lightbox ----------
+     Echte Screenshots können in assets/screenshots/<key>.jpg abgelegt werden;
+     bis dahin (oder falls das Bild 404) zeigt ein Apple-artiges Gradient-Panel
+     mit dem Markennamen statt eines kaputten Bild-Icons. */
+  (function(){
+    const CASES={
+      brothers:{
+        title:'Brothers Barbershop', mark:'BB',
+        meta:'vienna · einseiter',
+        desc:'Eine kinematische Startszene, klare Zeiten, ein Weg zum Termin — eine Seite, die nach Handwerk aussieht, nicht nach Software.',
+        url:'https://moonlit-speculoos-26bb8a.netlify.app',
+        shot:'assets/screenshots/brothers-barbershop.jpg'
+      },
+      moritz:{
+        title:'Moritz Gallery', mark:'MG',
+        meta:'künstler moritz geberth · galerie · de/en',
+        desc:'Die Galerie tritt zurück: Schwarz, Raum, die Werke im Zentrum — mit echtem „verkauft“-Status. Ein Atelier, das sich wie eine Ausstellung anfühlt.',
+        url:'https://moritzgallery.at',
+        shot:'assets/screenshots/moritz-gallery.jpg'
+      }
+    };
+    const triggers=document.querySelectorAll('[data-case]');
+    const lb=document.getElementById('caseLightbox');
+    if(!triggers.length||!lb) return;
+    const card=document.getElementById('caseLightboxCard');
+    const img=document.getElementById('lightboxImg');
+    const fmark=document.getElementById('lightboxFallbackMark');
+    const urlEl=document.getElementById('lightboxUrl');
+    const metaEl=document.getElementById('lightboxMeta');
+    const titleEl=document.getElementById('lightboxTitle');
+    const descEl=document.getElementById('lightboxDesc');
+    const cta=document.getElementById('lightboxCta');
+    let open=false, opener=null;
+
+    function setOpen(v){
+      if(v===open) return;
+      open=v;
+      lb.classList.toggle('open', v);
+      lb.setAttribute('aria-hidden', String(!v));
+      lb.toggleAttribute('inert', !v);
+      lockScroll(v);
+      if(v){ card.querySelector('[data-lbclose]')?.focus({preventScroll:true}); }
+      else{ opener?.focus({preventScroll:true}); opener=null; }
+    }
+
+    function fill(data){
+      img.removeAttribute('data-loaded');
+      img.alt='Vorschau: '+data.title;
+      img.onload=()=>img.setAttribute('data-loaded','true');
+      img.onerror=()=>img.removeAttribute('data-loaded');
+      img.src=data.shot;
+      fmark.textContent=data.mark;
+      urlEl.textContent=data.url.replace(/^https?:\/\//,'');
+      metaEl.textContent=data.meta;
+      titleEl.textContent=data.title;
+      descEl.textContent=data.desc;
+      cta.href=data.url;
+    }
+
+    triggers.forEach(a=>{
+      a.addEventListener('click', e=>{
+        if(e.metaKey||e.ctrlKey||e.shiftKey||e.button!==0) return; // normales Öffnen in neuem Tab erlauben
+        const data=CASES[a.dataset.case];
+        if(!data) return;
+        e.preventDefault();
+        opener=a;
+        fill(data);
+        setOpen(true);
+      });
+    });
+
+    lb.addEventListener('click', e=>{
+      if(e.target.closest('[data-lbclose]') || !e.target.closest('.lightbox__card')) setOpen(false);
+    }, true);
+    window.addEventListener('keydown', e=>{
+      if(e.key==='Escape' && open) setOpen(false);
+    });
+  })();
 })();
 </script>
 </body>

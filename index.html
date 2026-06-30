@@ -363,7 +363,22 @@ section{ position:relative; }
 .pricing__care b{ color:var(--accent); font-weight:600; }
 .process__note{ margin-top:2.2rem; font-family:var(--mono); font-size:.8rem; letter-spacing:.02em; opacity:.5; }
 
+/* ---------- Wort-für-Wort Reveal beim Scrollen ---------- */
+.js [data-words] .w{ opacity:.18; display:inline-block; }
+
+/* ---------- Hero: „Antwort kommt" — der Haken ---------- */
+.hero__reply{ display:inline-flex; align-items:center; gap:.7rem; margin-top:1.6rem; opacity:0; transform:translateY(8px); transition:opacity .6s var(--ease), transform .6s var(--ease); font-family:var(--mono); font-size:.78rem; letter-spacing:.04em; color:var(--accent); }
+.hero__reply.show{ opacity:1; transform:none; }
+.hero__reply .dots{ display:inline-flex; gap:.28rem; }
+.hero__reply .dots i{ width:.4rem; height:.4rem; border-radius:50%; background:var(--accent); animation:typedot 1.2s infinite ease-in-out; }
+.hero__reply .dots i:nth-child(2){ animation-delay:.18s; }
+.hero__reply .dots i:nth-child(3){ animation-delay:.36s; }
+@keyframes typedot{ 0%,60%,100%{ transform:translateY(0); opacity:.4; } 30%{ transform:translateY(-.28rem); opacity:1; } }
+
 /* ---------- Mobile-Feinschliff ---------- */
+@media (max-width:760px){
+  .js .case{ will-change:transform,opacity; }
+}
 @media (max-width:600px){
   .hero{ padding-top:6.5rem; }
   .hero__msg{ font-size:clamp(2rem,8.5vw,2.7rem); }
@@ -414,6 +429,7 @@ section{ position:relative; }
           <h1 class="hero__msg" id="heroMsg" data-parallax="0.1" aria-label="hi, ich hab da so eine idee. weiß ehrlich gesagt nicht, ob das überhaupt geht. oder was das kostet.">
             <span class="l1">hi, ich hab da so eine idee …</span><span class="l2">weiß ehrlich gesagt nicht, ob das überhaupt geht. oder was das kostet.</span><span class="cursor" aria-hidden="true"></span>
           </h1>
+          <div class="hero__reply" id="heroReply" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span>floriders schreibt …</span></div>
           <div class="hero__actions" id="heroActions">
             <a class="btn btn--primary" href="#kontakt" data-scroll>Projekt starten →</a>
             <a class="btn btn--ghost" href="#beweise" data-scroll>Arbeiten ansehen</a>
@@ -431,7 +447,7 @@ section{ position:relative; }
     <div class="wrap questions__grid">
       <div>
         <p class="eyebrow" data-reveal>01 — die fragen</p>
-        <p class="lead" data-mask style="margin-top:1.6rem">Bevor ich etwas baue, stelle ich Fragen. Die richtigen sind schon die halbe Lösung.</p>
+        <p class="lead" data-words style="margin-top:1.6rem">Bevor ich etwas baue, stelle ich Fragen. Die richtigen sind schon die halbe Lösung.</p>
       </div>
       <div class="q-notes" data-stagger>
         <p class="q-note n1">Wer benutzt das wirklich — und in welchem Moment?</p>
@@ -700,7 +716,7 @@ section{ position:relative; }
   <section class="contact" id="kontakt">
     <div class="wrap contact__inner">
       <p class="eyebrow" data-reveal>12 — deine nachricht</p>
-      <p class="contact__lead" data-mask style="margin-top:1.6rem">Du hast eine Idee, die du noch nicht ganz greifen kannst? Genau damit fange ich am liebsten an.</p>
+      <p class="contact__lead" data-words style="margin-top:1.6rem">Du hast eine Idee, die du noch nicht ganz greifen kannst? Genau damit fange ich am liebsten an.</p>
       <div class="field-msg" data-reveal>
         <label for="msg" class="skip">Deine Nachricht</label>
         <textarea id="msg" placeholder="hi, ich hab da so eine idee…"></textarea>
@@ -776,10 +792,11 @@ section{ position:relative; }
   const L2="weiß ehrlich gesagt nicht, ob das überhaupt geht. oder was das kostet.";
   const e1=document.querySelector('#heroMsg .l1'), e2=document.querySelector('#heroMsg .l2');
   const actions=document.getElementById('heroActions');
-  if(reduce){ e1.textContent=L1; e2.textContent=L2; actions.classList.add('show'); }
+  const reply=document.getElementById('heroReply');
+  if(reduce){ e1.textContent=L1; e2.textContent=L2; reply.classList.add('show'); actions.classList.add('show'); }
   else{ let i=0,j=0;
     function a(){ if(i<=L1.length){e1.textContent=L1.slice(0,i++);setTimeout(a,i<5?90:42);} else setTimeout(b,420); }
-    function b(){ if(j<=L2.length){e2.textContent=L2.slice(0,j++);setTimeout(b,26);} else actions.classList.add('show'); }
+    function b(){ if(j<=L2.length){e2.textContent=L2.slice(0,j++);setTimeout(b,26);} else { reply.classList.add('show'); setTimeout(()=>actions.classList.add('show'),1100); } }
     e1.textContent=''; e2.textContent=''; setTimeout(a, 250); }
 
   /* ---------- Lenis ---------- */
@@ -819,6 +836,13 @@ section{ position:relative; }
       const amt=parseFloat(el.dataset.parallax)||.15;
       gsap.to(el,{yPercent:-amt*100,ease:'none',scrollTrigger:{trigger:el,start:'top bottom',end:'bottom top',scrub:true}});
     });
+    /* Wort-für-Wort: Sätze „tinten" beim Scrollen ein */
+    gsap.utils.toArray('[data-words]').forEach(el=>{
+      const words=el.textContent.trim().split(/\s+/);
+      el.innerHTML=words.map(w=>'<span class="w">'+w+'</span>').join(' ');
+      gsap.to(el.querySelectorAll('.w'),{opacity:1,ease:'none',stagger:.06,
+        scrollTrigger:{trigger:el,start:'top 82%',end:'top 38%',scrub:true}});
+    });
     /* Prozess-Linie zeichnet sich */
     gsap.to('.steps__line',{scaleX:1,duration:1.1,ease:'power2.out',scrollTrigger:{trigger:'.process',start:'top 60%'}});
     /* nur am Handy: zwei zusätzliche Akzente */
@@ -833,6 +857,11 @@ section{ position:relative; }
     gsap.to('.hero__film',{opacity:1,duration:1.5,ease:'power2.out'});
     gsap.to('.hero__main',{opacity:1,y:0,duration:1.1,ease:'power3.out',delay:.1});
     gsap.to('.hero__light',{xPercent:14,yPercent:9,scale:1.18,duration:13,ease:'sine.inOut',repeat:-1,yoyo:true});
+    if(!isMobile){   // Licht folgt sanft dem Cursor — Hero wirkt lebendig
+      const xTo=gsap.quickTo('.hero__film','x',{duration:1.2,ease:'power2.out'});
+      const yTo=gsap.quickTo('.hero__film','y',{duration:1.2,ease:'power2.out'});
+      window.addEventListener('pointermove',e=>{ xTo((e.clientX/window.innerWidth-.5)*26); yTo((e.clientY/window.innerHeight-.5)*26); },{passive:true});
+    }
   }
 
   /* ============================================================
@@ -878,6 +907,17 @@ section{ position:relative; }
       gsap.to(track,{x:()=>-amount(),ease:'none',
         scrollTrigger:{trigger:'.hcases',start:'top top',end:()=>'+='+amount(),pin:true,scrub:.7,anticipatePin:1,invalidateOnRefresh:true}});
     }
+  }
+
+  /* ---------- Beweise am Handy: Karten gleiten scrub-gesteuert seitlich ein ----------
+     Kein Pin (mobile-unfreundlich), aber dieselbe Idee: Scrollen bewegt sichtbar etwas. */
+  if(!reduce && isMobile){
+    gsap.utils.toArray('.hcases .case').forEach((el,i)=>{
+      const dir = i%2===0 ? -1 : 1;
+      gsap.fromTo(el,{xPercent:14*dir,opacity:.35,rotate:dir*1.4},
+        {xPercent:0,opacity:1,rotate:0,ease:'none',
+         scrollTrigger:{trigger:el,start:'top 95%',end:'top 55%',scrub:.6}});
+    });
   }
 
   /* ---------- Mail-Pill ---------- */

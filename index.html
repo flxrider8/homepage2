@@ -236,9 +236,10 @@ section{ position:relative; }
 /* horizontale Fallakten (Desktop-Pin) */
 .hcases__track{ display:flex; flex-direction:column; }
 @media(min-width:861px){
-  .hcases{ min-height:100svh; display:flex; align-items:center; overflow:hidden; }
+  /* overflow NICHT auf dem Pin-Element — das killt den GSAP-Spacer */
+  .hcases{ height:100svh; display:flex; align-items:center; }
   .hcases__track{ flex-direction:row; align-items:stretch; gap:clamp(1.5rem,3vw,2.5rem); width:max-content; padding:0 var(--gut); will-change:transform; }
-  .hcases__track .case{ width:min(78vw,720px); flex:none; border-top:none; border:1px solid var(--line); border-radius:22px; padding:clamp(2.5rem,4vw,3.4rem); background:color-mix(in srgb,var(--panel) 55%, transparent); transition:border-color .4s var(--ease); }
+  .hcases__track .case{ width:min(78vw, 860px); flex:none; border-top:none; border:1px solid var(--line); border-radius:22px; padding:clamp(2.5rem,4vw,3.4rem); background:color-mix(in srgb,var(--panel) 55%, transparent); transition:border-color .4s var(--ease); }
   .hcases__track .case:hover{ border-color:color-mix(in srgb,var(--accent) 40%, var(--line)); }
   .proof__intro{ margin-bottom:clamp(2.5rem,5vw,4rem); }
 }
@@ -375,9 +376,37 @@ section{ position:relative; }
 .hero__reply .dots i:nth-child(3){ animation-delay:.36s; }
 @keyframes typedot{ 0%,60%,100%{ transform:translateY(0); opacity:.4; } 30%{ transform:translateY(-.28rem); opacity:1; } }
 
+/* ============================================================
+   TEXT-RUN
+   ============================================================ */
+.textrun{ overflow:hidden; padding:clamp(6rem,12vh,9rem) 0; }
+.textrun__line{ white-space:nowrap; will-change:transform; line-height:1; }
+.textrun__word{ font-weight:600; font-size:clamp(5rem,15vw,12rem); letter-spacing:-.055em; display:block; }
+.textrun__line--1 .textrun__word{ padding-left:var(--gut); }
+.textrun__line--2 .textrun__word{ text-align:right; padding-right:var(--gut); margin-top:.08em; }
+
+/* ============================================================
+   FAKTEN — scrub-animierte Zahlen, kein Pin
+   ============================================================ */
+.facts{ padding:clamp(6rem,14vh,11rem) 0; border-top:1px solid var(--line); }
+.facts__grid{ display:grid; gap:clamp(2.5rem,5vw,3.5rem); grid-template-columns:repeat(3,1fr); margin-top:clamp(3rem,7vw,5rem); }
+@media(max-width:680px){ .facts__grid{ grid-template-columns:1fr; gap:2.5rem; } }
+.fact__num{ font-weight:600; font-size:clamp(4rem,11vw,8rem); letter-spacing:-.05em; line-height:.86; display:flex; align-items:baseline; gap:.12em; margin-bottom:.7rem; }
+.fact__unit{ font-size:.52em; font-weight:500; opacity:.48; letter-spacing:-.01em; }
+.fact__label{ font-family:var(--mono); font-size:.78rem; letter-spacing:.09em; text-transform:uppercase; opacity:.42; }
+
+/* ============================================================
+   MOBILE — Beweise: Sticky Card Stack
+   ============================================================ */
 /* ---------- Mobile-Feinschliff ---------- */
 @media (max-width:760px){
-  .js .case{ will-change:transform,opacity; }
+  .hcases{ padding-bottom:10rem; }
+  .hcases .case{
+    position:sticky; top:5.5rem; margin-bottom:1.5rem;
+    border:1px solid var(--line); border-radius:20px;
+    padding:2rem 1.4rem; background:var(--panel); will-change:transform;
+  }
+  .hcases .case:nth-child(even){ background:color-mix(in srgb,var(--accent) 5%,var(--panel)); }
 }
 @media (max-width:600px){
   .hero{ padding-top:6.5rem; }
@@ -480,6 +509,12 @@ section{ position:relative; }
   </section>
 
   <!-- 4+5 · DAS LABOR -->
+  <!-- TEXT-RUN -->
+  <section class="textrun" aria-hidden="true">
+    <div class="textrun__line textrun__line--1"><span class="textrun__word">aus idee</span></div>
+    <div class="textrun__line textrun__line--2"><span class="textrun__word">wird produkt.</span></div>
+  </section>
+
   <section class="lab" id="labor">
     <div class="lab__stage">
       <div class="lab__glow" aria-hidden="true"></div>
@@ -538,6 +573,27 @@ section{ position:relative; }
       </div>
       <div class="live" data-reveal><span class="pulse" aria-hidden="true"></span><span>live</span></div>
       <p class="lead" data-mask style="margin:0 auto;max-width:18ch">Live. Und genau so, wie es gedacht war.</p>
+    </div>
+  </section>
+
+  <!-- FAKTEN -->
+  <section class="facts" id="facts">
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>in zahlen</p>
+      <div class="facts__grid">
+        <div class="fact">
+          <div class="fact__num"><b class="count" data-target="12">0</b><span class="fact__unit">h</span></div>
+          <p class="fact__label">Antwortzeit</p>
+        </div>
+        <div class="fact">
+          <div class="fact__num"><b class="count" data-target="3">0</b><span class="fact__unit"> Tage</span></div>
+          <p class="fact__label">Erstes Mockup</p>
+        </div>
+        <div class="fact">
+          <div class="fact__num"><b class="count" data-target="2">0</b><span class="fact__unit"> Wochen</span></div>
+          <p class="fact__label">Bis Live</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -899,26 +955,41 @@ section{ position:relative; }
       scrollTrigger:{trigger:'.launch',start:'top 90%',end:'top 40%',scrub:.6}});
   }
 
-  /* ---------- Beweise: horizontaler Pin (Desktop) — scrollen bewegt seitwärts ---------- */
+  /* ---------- Beweise: horizontaler Pin Desktop ----------
+     onUpdate+gsap.set: verlässlichste Methode, kein Tween-Drift    */
   if(!reduce && !isMobile){
-    const track=document.querySelector('.hcases__track'), cont=document.querySelector('.hcases');
-    if(track && cont){
-      const amount=()=>Math.max(0, track.scrollWidth - cont.clientWidth);
-      gsap.to(track,{x:()=>-amount(),ease:'none',
-        scrollTrigger:{trigger:'.hcases',start:'top top',end:()=>'+='+amount(),pin:true,scrub:.7,anticipatePin:1,invalidateOnRefresh:true}});
+    const track=document.querySelector('.hcases__track');
+    if(track){
+      const dist=()=>Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
+      ScrollTrigger.create({
+        trigger:'.hcases',pin:true,start:'top top',
+        end:()=>'+='+(dist()),scrub:.6,invalidateOnRefresh:true,
+        onUpdate:self=>gsap.set(track,{x:-(self.progress*dist())})
+      });
     }
   }
 
-  /* ---------- Beweise am Handy: Karten gleiten scrub-gesteuert seitlich ein ----------
-     Kein Pin (mobile-unfreundlich), aber dieselbe Idee: Scrollen bewegt sichtbar etwas. */
-  if(!reduce && isMobile){
-    gsap.utils.toArray('.hcases .case').forEach((el,i)=>{
-      const dir = i%2===0 ? -1 : 1;
-      gsap.fromTo(el,{xPercent:14*dir,opacity:.35,rotate:dir*1.4},
-        {xPercent:0,opacity:1,rotate:0,ease:'none',
-         scrollTrigger:{trigger:el,start:'top 95%',end:'top 55%',scrub:.6}});
-    });
+
+  /* ---------- Text-Run: aus idee wird produkt ---------- */
+  /* ---------- Text-Run: zwei Zeilen driften gegenläufig (kein Pin) ---------- */
+  const tl1=document.querySelector('.textrun__line--1');
+  const tl2=document.querySelector('.textrun__line--2');
+  if(tl1&&tl2&&!reduce){
+    const trST={trigger:'.textrun',start:'top bottom',end:'bottom top',scrub:1.2};
+    gsap.fromTo(tl1,{xPercent:5},{xPercent:-5,ease:'none',scrollTrigger:trST});
+    gsap.fromTo(tl2,{xPercent:-5},{xPercent:5,ease:'none',scrollTrigger:trST});
   }
+
+  /* ---------- Fakten: Zahlen zählen beim Scrollen hoch ---------- */
+  document.querySelectorAll('.count').forEach(el=>{
+    const target=parseInt(el.dataset.target);
+    if(reduce){el.textContent=target;return;}
+    const obj={val:0};
+    gsap.to(obj,{val:target,ease:'power1.out',
+      onUpdate:()=>{el.textContent=Math.round(obj.val);},
+      scrollTrigger:{trigger:el.closest('.fact')||el,start:'top 78%',end:'top 28%',scrub:.5}
+    });
+  });
 
   /* ---------- Mail-Pill ---------- */
   const MAIL='hallo@floriders.at', ta=document.getElementById('msg');
